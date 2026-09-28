@@ -2,6 +2,8 @@
 
 English | [日本語](README.ja.md)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23008263.svg)](https://doi.org/10.5281/zenodo.23008263)
+
 Measurements on one desktop PC with Minecraft Java Edition 26.1.2:
 
 1. How much faster chunk generation gets with all CPU cores, and with the GPU
@@ -169,5 +171,7 @@ Server jars, the JDK, mods and worlds are not included. Get each from its offici
 | server comparison | `./run_servers.sh`, `./run_folia_fix.sh`, `./run_kinds.sh` |
 | mobs | `python mobs/push_bench.py`, `python mobs/path_bench.py` (needs a CUDA GPU and CuPy) |
 | tables / charts | `python summarize.py > results/SUMMARY.md`, `python charts.py` |
+
+**Cite as:** Tsuruta (2026). *How many cores can a Minecraft server use?* Zenodo. https://doi.org/10.5281/zenodo.23008263
 
 Minecraft is a trademark of Mojang Studios. This project is not affiliated with Mojang or Microsoft. Code is MIT licensed.

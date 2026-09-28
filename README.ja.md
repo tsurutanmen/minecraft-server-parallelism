@@ -2,6 +2,8 @@
 
 [English](README.md) | 日本語
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23008263.svg)](https://doi.org/10.5281/zenodo.23008263)
+
 Minecraft Java Edition 26.1.2 のサーバーで、次の4つを同じ PC で測りました。
 
 1. チャンク生成を、マルチコアと GPU でどこまで速くできるか
@@ -173,6 +175,8 @@ Paper の本流スレッド（`Server thread`）を JFR で120秒記録し、各
 | モブ | `python mobs/push_bench.py` / `python mobs/path_bench.py`（CUDA 対応の GPU と CuPy が必要） |
 | 表を作る | `python summarize.py > results/SUMMARY.md` |
 | グラフを作る | `python charts.py`（`docs/*.png` を書き出す） |
+
+**引用するとき：** Tsuruta (2026). *How many cores can a Minecraft server use?* Zenodo. https://doi.org/10.5281/zenodo.23008263
 
 Minecraft は Mojang Studios の商標です。このリポジトリは Mojang および Microsoft とは関係ありません。
 

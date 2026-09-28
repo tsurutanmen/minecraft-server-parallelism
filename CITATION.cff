@@ -9,6 +9,7 @@ authors:
 repository-code: "https://github.com/tsurutanmen/minecraft-server-parallelism"
 url: "https://github.com/tsurutanmen/minecraft-server-parallelism"
 license: MIT
+doi: 10.5281/zenodo.23008263
 version: 1.0.0
 date-released: 2026-09-28
 keywords:
