@@ -71,7 +71,8 @@ def parse(r):
     t = r["report_tail"]
     if r["server"] == "folia":
         med = [float(m.group(1)) for l in t if (m := re.search(r"Median Region TPS: " + num, l))]
-        mspt = [float(m.group(1)) for l in t if (m := re.search(num + r" MSPT at", l))]
+        # Folia prints thousands separators ("3,828.71 MSPT"); the plain number pattern would read "828.71"
+        mspt = [float(m.group(1).replace(",", "")) for l in t if (m := re.search(r"([\d,]+(?:\.\d+)?) MSPT at", l))]
         regions = [int(m.group(1)) for l in t if (m := re.search(r"Total regions: (\d+)", l))]
         return st.median(med[-6:]), max(mspt[-6:]), max(regions)
     tps = [[float(x) for x in re.findall(num, m.group(1))] for l in t if (m := re.search(r"TPS from last [^:]*: ([\d., ]+)", l))]

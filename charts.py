@@ -30,7 +30,7 @@ num = r"(\d+(?:\.\d+)?)"
 
 def tps(r):
     t = r["report_tail"]
-    if r["server"] == "folia":
+    if r["server"].startswith("folia"):
         return st.median([float(m.group(1)) for l in t if (m := re.search(r"Median Region TPS: " + num, l))][-6:])
     v = [[float(x) for x in re.findall(num, m.group(1))] for l in t if (m := re.search(r"TPS from last [^:]*: ([\d., ]+)", l))]
     return [(x[1] if len(x) == 4 else x[0]) for x in v][-1]
