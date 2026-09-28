@@ -1,0 +1,13 @@
+const mineflayer = require('mineflayer')
+const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'p2', version: '26.1', auth: 'offline' })
+const w = (ms) => new Promise((r) => setTimeout(r, ms))
+bot.on('messagestr', (m) => console.log('MSG', m))
+bot.once('spawn', async () => {
+  await w(1500); bot.chat('/gamemode creative @s'); await w(500)
+  for (let i = 0; i < 5; i++) { bot.chat('/summon minecraft:villager ~ ~ ~'); await w(100) }; await w(1500)
+  bot.chat('/execute if entity @e[type=minecraft:villager,distance=..48]'); await w(1500)
+  bot.chat('/summon minecraft:villager ~ ~ ~'); await w(800)
+  bot.chat('/datapack list'); await w(1500)
+  process.exit(0)
+})
+setTimeout(() => process.exit(1), 30000)

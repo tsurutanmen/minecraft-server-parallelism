@@ -1,0 +1,15 @@
+{"stop_s": 389.8, "server": "vanilla", "radius": 1024, "startup_s": 8.3, "gen_wall_s": 710.9, "chunks": 16641, "chunky_time": "0:11:48", "chunks_per_s": 23.4, "ts": "2026-09-27 19:30:34"}
+{"stop_s": 7.1, "server": "c2me", "radius": 1024, "startup_s": 15.7, "gen_wall_s": 122.0, "chunks": 16641, "chunky_time": "0:01:59", "chunks_per_s": 136.4, "ts": "2026-09-27 19:33:00"}
+{"stop_s": 8.9, "server": "c2me-lux", "radius": 1024, "startup_s": 16.0, "gen_wall_s": 88.3, "chunks": 16641, "chunky_time": "0:01:26", "chunks_per_s": 188.4, "ts": "2026-09-27 19:34:53"}
+{"stop_s": 9.7, "server": "c2me-ocl", "radius": 1024, "startup_s": 11.2, "gen_wall_s": 34.4, "chunks": 16641, "chunky_time": "0:00:31", "chunks_per_s": 483.1, "ts": "2026-09-27 19:35:49"}
+{"stop_s": 401.2, "server": "vanilla", "radius": 1024, "startup_s": 9.3, "gen_wall_s": 717.3, "chunks": 16641, "chunky_time": "0:11:55", "chunks_per_s": 23.2, "ts": "2026-09-27 19:54:37"}
+{"stop_s": 17.1, "server": "c2me", "radius": 1024, "startup_s": 9.5, "gen_wall_s": 46.8, "chunks": 16641, "chunky_time": "0:00:43", "chunks_per_s": 355.4, "ts": "2026-09-27 19:55:51"}
+{"stop_s": 16.8, "server": "c2me-lux", "radius": 1024, "startup_s": 9.1, "gen_wall_s": 45.9, "chunks": 16641, "chunky_time": "0:00:43", "chunks_per_s": 362.9, "ts": "2026-09-27 19:57:03"}
+{"stop_s": 33.9, "server": "c2me-ocl", "radius": 1024, "startup_s": 10.2, "gen_wall_s": 36.4, "chunks": 16641, "chunky_time": "0:00:29", "chunks_per_s": 457.6, "ts": "2026-09-27 19:58:24"}
+{"stop_s": 358.1, "server": "vanilla", "radius": 1024, "startup_s": 8.5, "gen_wall_s": 762.6, "chunks": 16641, "chunky_time": "0:12:39", "chunks_per_s": 21.8, "ts": "2026-09-27 20:17:14"}
+{"stop_s": 9.8, "server": "c2me", "radius": 1024, "startup_s": 10.2, "gen_wall_s": 50.2, "chunks": 16641, "chunky_time": "0:00:47", "chunks_per_s": 331.4, "ts": "2026-09-27 20:18:24"}
+{"stop_s": 9.3, "server": "c2me-lux", "radius": 1024, "startup_s": 10.8, "gen_wall_s": 49.1, "chunks": 16641, "chunky_time": "0:00:46", "chunks_per_s": 338.9, "ts": "2026-09-27 20:19:34"}
+{"stop_s": 13.5, "server": "c2me-ocl", "radius": 1024, "startup_s": 11.2, "gen_wall_s": 34.0, "chunks": 16641, "chunky_time": "0:00:31", "chunks_per_s": 489.8, "ts": "2026-09-27 20:20:33"}
+{"stop_s": 12.5, "server": "c2me-ocl", "radius": 1300, "startup_s": 13.8, "gen_wall_s": 65.5, "chunks": 27225, "chunky_time": "0:01:03", "chunks_per_s": 415.7, "cpu_cores_mean": 10.22, "ts": "2026-09-27 21:02:38"}
+{"stop_s": 27.5, "server": "c2me-ocl", "radius": 2450, "startup_s": 20.5, "gen_wall_s": 156.5, "chunks": 95481, "chunky_time": "0:02:34", "chunks_per_s": 610.0, "cpu_cores_mean": 13.12, "ts": "2026-09-27 21:22:49"}
+{"stop_s": 34.6, "server": "c2me-ocl", "radius": 3050, "startup_s": 24.8, "gen_wall_s": 231.9, "chunks": 146689, "chunky_time": "0:03:49", "chunks_per_s": 632.6, "cpu_cores_mean": 13.03, "ts": "2026-09-28 07:54:51"}

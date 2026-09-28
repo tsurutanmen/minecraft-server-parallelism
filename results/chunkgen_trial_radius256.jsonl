@@ -1,0 +1,2 @@
+{"server": "vanilla", "radius": 256, "startup_s": 19.2, "gen_wall_s": 21.3, "chunks": 1089, "chunky_time": "0:00:19", "chunks_per_s": 51.2, "ts": "2026-09-27 18:08:33"}
+{"server": "c2me-ocl", "radius": 256, "startup_s": 30.2, "gen_wall_s": 6.7, "chunks": 1089, "chunky_time": "0:00:04", "chunks_per_s": 163.4, "ts": "2026-09-27 18:09:18"}

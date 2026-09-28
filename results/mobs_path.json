@@ -1,0 +1,54 @@
+[
+ {
+  "mobs": 10,
+  "map": "128x128",
+  "walls": 0.25,
+  "astar_cpu1_ms": 0.15279999934136868,
+  "astar_cpuN_ms": 0.1936999997269595,
+  "flow_bfs_cpu1_ms": 0.16139999934239313,
+  "flow_gpu_ms": 1.9962000005762093,
+  "gpu_relax_iterations": 160,
+  "astar_matches_bfs": true,
+  "gpu_field_matches_bfs": true,
+  "mean_path_len": 69.7
+ },
+ {
+  "mobs": 100,
+  "map": "128x128",
+  "walls": 0.25,
+  "astar_cpu1_ms": 1.6223999991780147,
+  "astar_cpuN_ms": 1.178500000605709,
+  "flow_bfs_cpu1_ms": 0.16139999934239313,
+  "flow_gpu_ms": 1.9962000005762093,
+  "gpu_relax_iterations": 160,
+  "astar_matches_bfs": true,
+  "gpu_field_matches_bfs": true,
+  "mean_path_len": 61.89
+ },
+ {
+  "mobs": 1000,
+  "map": "128x128",
+  "walls": 0.25,
+  "astar_cpu1_ms": 18.509699999412987,
+  "astar_cpuN_ms": 8.701099999598227,
+  "flow_bfs_cpu1_ms": 0.16139999934239313,
+  "flow_gpu_ms": 1.9962000005762093,
+  "gpu_relax_iterations": 160,
+  "astar_matches_bfs": true,
+  "gpu_field_matches_bfs": true,
+  "mean_path_len": 66.662
+ },
+ {
+  "mobs": 10000,
+  "map": "128x128",
+  "walls": 0.25,
+  "astar_cpu1_ms": 188.0700000001525,
+  "astar_cpuN_ms": 76.85949999904551,
+  "flow_bfs_cpu1_ms": 0.16139999934239313,
+  "flow_gpu_ms": 1.9962000005762093,
+  "gpu_relax_iterations": 160,
+  "astar_matches_bfs": true,
+  "gpu_field_matches_bfs": true,
+  "mean_path_len": 66.6224
+ }
+]

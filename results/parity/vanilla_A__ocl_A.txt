@@ -1,0 +1,22 @@
+chunks: A=625 B=625 compared=625  chunks with any difference=602
+blocks compared=61,440,000  differing=275,474  (0.448363%)
+  y<0 (deepslate, caves, aquifers)         0.071533%  (7,325/10,240,000)
+  0..55                                    0.508516%  (45,563/8,960,000)
+  56..79 (surface around sea level)        1.923984%  (73,881/3,840,000)
+  80+ (mountains, trees)                   0.387253%  (148,705/38,400,000)
+top substitutions (A -> B):
+      60,325  minecraft:air -> minecraft:oak_leaves
+      59,369  minecraft:oak_leaves -> minecraft:air
+      14,969  minecraft:leaf_litter -> minecraft:air
+      14,961  minecraft:air -> minecraft:leaf_litter
+      12,040  minecraft:air -> minecraft:birch_leaves
+      10,984  minecraft:birch_leaves -> minecraft:air
+       9,509  minecraft:coal_ore -> minecraft:stone
+       8,970  minecraft:stone -> minecraft:coal_ore
+       5,589  minecraft:andesite -> minecraft:diorite
+       5,544  minecraft:granite -> minecraft:andesite
+       4,916  minecraft:oak_log -> minecraft:air
+       4,883  minecraft:air -> minecraft:oak_log
+       4,728  minecraft:diorite -> minecraft:granite
+       4,387  minecraft:granite -> minecraft:diorite
+       4,359  minecraft:diorite -> minecraft:andesite

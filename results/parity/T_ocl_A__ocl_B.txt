@@ -1,0 +1,13 @@
+chunks: A=625 B=625 compared=625  chunks with any difference=124
+blocks compared=61,440,000  differing=6,613  (0.010763%)
+  y<0 (deepslate, caves, aquifers)         0.044531%  (4,560/10,240,000)
+  0..55                                    0.011775%  (1,055/8,960,000)
+  56..79 (surface around sea level)        0.025990%  (998/3,840,000)
+  80+ (mountains, trees)                   0.000000%  (0/38,400,000)
+top substitutions (A -> B):
+       3,656  G -> A
+       2,083  A -> G
+         249  A -> F
+         246  F -> A
+         243  G -> F
+         136  F -> G

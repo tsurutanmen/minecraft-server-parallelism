@@ -1,0 +1,6 @@
+{"stop_s": 144.0, "server": "vanilla", "radius": 512, "startup_s": 10.2, "gen_wall_s": 220.8, "chunks": 4225, "chunky_time": "0:03:38", "chunks_per_s": 19.1, "cpu_cores_mean": 1.13, "ts": "2026-09-27 20:27:12"}
+{"stop_s": 141.6, "server": "vanilla", "radius": 512, "startup_s": 9.2, "gen_wall_s": 221.1, "chunks": 4225, "chunky_time": "0:03:38", "chunks_per_s": 19.1, "cpu_cores_mean": 1.14, "ts": "2026-09-27 20:33:25"}
+{"stop_s": 8.2, "server": "c2me", "radius": 512, "startup_s": 10.4, "gen_wall_s": 17.5, "chunks": 4225, "chunky_time": "0:00:15", "chunks_per_s": 241.7, "cpu_cores_mean": 11.58, "ts": "2026-09-27 20:34:03"}
+{"stop_s": 8.6, "server": "c2me-lux", "radius": 512, "startup_s": 10.1, "gen_wall_s": 15.7, "chunks": 4225, "chunky_time": "0:00:13", "chunks_per_s": 269.8, "cpu_cores_mean": 12.52, "ts": "2026-09-27 20:34:38"}
+{"stop_s": 8.9, "server": "c2me-ocl", "radius": 512, "startup_s": 11.4, "gen_wall_s": 13.3, "chunks": 4225, "chunky_time": "0:00:10", "chunks_per_s": 316.9, "cpu_cores_mean": 11.1, "ts": "2026-09-27 20:35:13"}
+{"stop_s": 8.9, "server": "c2me-ocl", "radius": 512, "startup_s": 11.6, "gen_wall_s": 13.9, "chunks": 4225, "chunky_time": "0:00:11", "chunks_per_s": 303.8, "cpu_cores_mean": 11.32, "ts": "2026-09-27 20:35:48"}

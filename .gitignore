@@ -1,0 +1,8 @@
+jdk/
+dl/
+servers/
+worlds/
+jfr/
+bots/node_modules/
+__pycache__/
+*.log

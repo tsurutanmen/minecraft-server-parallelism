@@ -1,0 +1,16 @@
+samples on 'Server thread': 10865  (busy: 10865)
+   67.7%  of all   67.7% of busy   entities: AI (brain)
+   11.2%  of all   11.2% of busy   entities: other
+    4.7%  of all    4.7% of busy   entities: pushing
+    4.4%  of all    4.4% of busy   entities: movement/collision
+    4.0%  of all    4.0% of busy   entities: pathfinding
+    3.3%  of all    3.3% of busy   random ticks, weather, spawning
+    2.2%  of all    2.2% of busy   chunk system / entity tracking
+    1.2%  of all    1.2% of busy   entities: AI (goals)
+    0.8%  of all    0.8% of busy   network
+    0.3%  of all    0.3% of busy   scheduled block/fluid ticks (redstone etc.)
+    0.1%  of all    0.1% of busy   block entities
+    0.1%  of all    0.1% of busy   server: other
+    0.0%  of all    0.0% of busy   world tick: other
+    0.0%  of all    0.0% of busy   raids/other world
+Amdahl bound for splitting by kind of work: at most 1.48x (largest single kind = 67.7% of busy time)

@@ -1,0 +1,18 @@
+Folia 26.1.2 build 8, default threaded-regions.grid-exponent 4, view-distance 6, simulation-distance 6.
+Bots joined one at a time (bots/one.js), each teleported to (x, z); `tps` was read ~20 s after each join (diag2.py).
+Verbatim lines (entity counts removed).
+
+Spacing 1,536 and 768 blocks -> merged:
+after bot0 (-2304,-2304)  Total regions: 1 | [-2297,80,-2297] Chunks: 289 Players: 1
+after bot1 (-768,-2304)   Total regions: 1 | [-1065,80,-2297] Chunks: 578 Players: 2
+after bot2 (-2304,-1536)  Total regions: 1 | [-2297,80,-2137] Chunks: 867 Players: 3
+Spacing 3,072 blocks -> separate:
+after bot3 (2304,2304)    Total regions: 2 | ... | [2311,80,2311] Chunks: 289 Players: 1
+after bot4 (-768,2304)    Total regions: 3 | ... | [-761,80,2311] Chunks: 289 Players: 1
+
+Spacing 2,304 and 1,920 blocks -> separate:
+after bot0 (-2304,-2304)  Total regions: 1 | [-2297,80,-2297] Chunks: 289 Players: 1
+after bot1 (0,-2304)      Total regions: 2 | [7,80,-2297] Chunks: 289 | [-2297,80,-2297] Chunks: 289
+after bot2 (-2304,-384)   Total regions: 3 | [-2297,80,-377] Chunks: 289 | [-2297,80,-2297] Chunks: 289 | [7,80,-2297] Chunks: 289
+
+Spacing ~4,600 blocks -> separate (3 regions of 289 chunks each).
