@@ -10,7 +10,7 @@ OUT = Path(__file__).parent / "docs"; OUT.mkdir(exist_ok=True)
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
 SERIES = {"paper": "#2a78d6", "folia": "#eb6834", "shredded": "#1baf7a"}  # fixed order: slot 1, 2, 3
 NAMES = {"paper": "Paper", "folia": "Folia", "shredded": "ShreddedPaper"}
-plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 11, "axes.edgecolor": GRID, "axes.labelcolor": INK2,
+plt.rcParams.update({"svg.hashsalt": "mc-parallel", "svg.fonttype": "path", "font.family": "DejaVu Sans", "font.size": 11, "axes.edgecolor": GRID, "axes.labelcolor": INK2,
                      "xtick.color": INK2, "ytick.color": INK2, "text.color": INK})
 
 
@@ -53,7 +53,7 @@ ax.set_xticks([0, 1], [l for _, l in groups]); ax.set_ylim(0, 22.5); ax.set_ylab
 ax.set_title("4,800 villagers, 32 bots: Folia collapses when players cluster", loc="left", fontsize=12.5, color=INK, pad=12)
 ax.legend(frameon=False, ncol=3, loc="upper right", bbox_to_anchor=(1.0, 0.93))
 ax.set_ylim(0, 25)
-fig.tight_layout(); fig.savefig(OUT / "servers_spread_vs_clustered.png", dpi=150, facecolor=SURFACE); plt.close(fig)
+fig.tight_layout(); fig.savefig(OUT / "servers_spread_vs_clustered.png", dpi=150, facecolor=SURFACE); fig.savefig(OUT / "servers_spread_vs_clustered.svg", facecolor=SURFACE); plt.close(fig)
 
 # --- 2. chunk generation ---
 rs = [r for r in jl("chunkgen_speed.jsonl") if r["radius"] == 1024]
@@ -70,7 +70,7 @@ for i, (k, label, vals) in enumerate(rows[::-1]):
     ax.text(m + 6, i, f"{m:.0f} chunks/s  ·  {st.mean(cores[k]):.1f} cores busy", va="center", fontsize=10, color=INK)
 ax.set_yticks(range(4), [r[1] for r in rows[::-1]]); ax.set_xlim(0, 820); ax.set_xlabel("chunks generated per second (radius 1,024 blocks)")
 ax.set_title("Chunk generation: most of the gain is from using all cores", loc="left", fontsize=12.5, color=INK, pad=12)
-fig.tight_layout(); fig.savefig(OUT / "chunkgen.png", dpi=150, facecolor=SURFACE); plt.close(fig)
+fig.tight_layout(); fig.savefig(OUT / "chunkgen.png", dpi=150, facecolor=SURFACE); fig.savefig(OUT / "chunkgen.svg", facecolor=SURFACE); plt.close(fig)
 
 # --- 3. where Paper's tick goes ---
 shares = collections.defaultdict(list)
@@ -87,5 +87,5 @@ for i, (k, v) in enumerate(top[::-1]):
 ax.set_yticks(range(len(top)), [k for k, _ in top[::-1]]); ax.set_xlim(0, 80)
 ax.set_xlabel("share of Paper's main-thread samples (JFR, mean of 4 recordings)")
 ax.set_title("One kind of work dominates, so splitting by kind caps at ~1.5x", loc="left", fontsize=12.5, color=INK, pad=12)
-fig.tight_layout(); fig.savefig(OUT / "paper_tick_breakdown.png", dpi=150, facecolor=SURFACE); plt.close(fig)
+fig.tight_layout(); fig.savefig(OUT / "paper_tick_breakdown.png", dpi=150, facecolor=SURFACE); fig.savefig(OUT / "paper_tick_breakdown.svg", facecolor=SURFACE); plt.close(fig)
 print("wrote", sorted(p.name for p in OUT.glob("*.png")))
