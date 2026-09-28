@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use these measurements or scripts, please cite them as below."
+title: "How many cores can a Minecraft server use? Multicore and GPU measurements of chunk generation, mob work, and Paper vs Folia vs ShreddedPaper"
+type: software
+authors:
+  - family-names: Tsuruta
+    affiliation: Tsuruta Laboratory
+    orcid: "https://orcid.org/0009-0004-6910-610X"
+repository-code: "https://github.com/tsurutanmen/minecraft-server-parallelism"
+url: "https://github.com/tsurutanmen/minecraft-server-parallelism"
+license: MIT
+version: 1.0.0
+date-released: 2026-09-28
+keywords:
+  - minecraft
+  - folia
+  - paper
+  - shreddedpaper
+  - c2me
+  - benchmark
+  - multithreading
+  - gpu
+  - opencl

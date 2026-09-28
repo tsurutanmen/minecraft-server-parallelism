@@ -1,179 +1,173 @@
-# Minecraft サーバーは何コア使えるか：マルチコア化と GPU 化の実測
+# How many cores can a Minecraft server use?
 
-Minecraft Java Edition 26.1.2 のサーバーで、次の4つを同じ PC で測りました。
+English | [日本語](README.ja.md)
 
-1. チャンク生成を、マルチコアと GPU でどこまで速くできるか
-2. モブの処理（押し合い・経路探索）は GPU に向いているか
-3. Paper・Folia・ShreddedPaper を同じ負荷で比べると、どう違うか
-4. サーバーの処理を「種類ごと」に別々のコアへ分けると、最大で何倍になるか
+Measurements on one desktop PC with Minecraft Java Edition 26.1.2:
 
-すべての数字は `results/` の生データから `summarize.py` で作った [`results/SUMMARY.md`](results/SUMMARY.md) に基づいています。
+1. How much faster chunk generation gets with all CPU cores, and with the GPU
+2. Whether mob work (pushing, pathfinding) is worth moving to the GPU
+3. Paper vs Folia vs ShreddedPaper under the same bot swarm, with players spread out and clustered
+4. The most you could gain by giving each *kind* of server work its own core
 
-## English summary
+![Spread out vs clustered](docs/servers_spread_vs_clustered.png)
 
-Measurements on one desktop (i5-14600KF 14C/20T, 32 GB, RTX 3060 12 GB), Minecraft Java 26.1.2.
+Every number below comes from the raw data in `results/`, via `summarize.py` → [`results/SUMMARY.md`](results/SUMMARY.md). The charts come from `charts.py`.
 
-- **Chunk generation.** Vanilla uses about 1.1 cores and makes 22.8 chunks/s. C2ME spreads the work over about 11.6 cores (15.1x, excluding one outlier run). Its OpenCL add-on adds about 1.4x on top, for 20.9x in total. Terrain matches vanilla closely, but differs slightly more than two vanilla runs differ from each other, mainly near the surface.
-- **Mobs on the GPU.** At normal mob counts the GPU is not worth it. Pushing only beats one CPU core at a few thousand mobs, and beats all cores at around 16,000. fp32 is unsafe: the maximum relative error reached 0.11-0.12 in dense crowds of 64k-256k mobs and 0.23 with 256k spread-out mobs. For mobs chasing one player, one shared flow field takes 0.16 ms on one CPU core. Per-mob A* takes 18.5 ms for 1,000 mobs. The GPU flow field (2 ms) is slower than the CPU one.
-- **Folia vs ShreddedPaper vs Paper.** With default settings, Folia puts players closer than about 1.5-1.9 km apart into one region. With players spread out (1,920 blocks apart), Folia and ShreddedPaper both hold 20 TPS at 4,800 villagers, where Paper drops to about 4. With players clustered (256 blocks apart), Folia falls to 0.24-0.26 TPS in a single region, slower than Paper. ShreddedPaper still keeps 17.3-17.7 TPS.
-- **Splitting by kind of work.** On Paper, villager brain logic takes 66-70% of the main thread. Giving each kind of work its own core can therefore make a tick at most about 1.5x faster (Amdahl bound), and only about 1.1x faster if the split is simply "mobs" vs "everything else". The work has to be split by place or by entity instead.
+## Key findings
 
-## 環境
+- **Vanilla chunk generation uses about 1 core.** It makes 22.8 chunks/s. C2ME spreads the work over about 11.6 cores and makes 343 chunks/s (15.1x). The C2ME OpenCL add-on on an RTX 3060 raises this to 477 chunks/s (20.9x). Terrain from the GPU path matches vanilla closely. It differs slightly more than two vanilla runs differ from each other, mostly near the surface.
+- **The GPU does not help mobs at normal counts.** Pushing beats one CPU core at a few thousand mobs, and beats all cores at around 16,000. fp32 is unsafe. For a horde chasing one player, a shared flow field on one CPU core takes 0.16 ms. Per-mob A* takes 18.5 ms for 1,000 mobs. The GPU flow field is slower than the CPU one.
+- **Folia only helps when players are far apart.** With default settings, players within 1,536 blocks share one region; at 1,920 blocks they are split. With players spread out, Folia and ShreddedPaper both hold 20 TPS at 4,800 villagers, while Paper drops to about 3-4. With players clustered 256 blocks apart, Folia runs everything in one region at **0.24-0.26 TPS, slower than Paper**. ShreddedPaper keeps **17.3-17.7 TPS**.
+- **Splitting by kind of work caps at about 1.5x.** Villager brain logic takes 66-70% of Paper's main thread. A tick cannot get shorter than its largest kind of work, which makes about 1.5x the upper bound. Splitting only "mobs" from "everything else" gives about 1.1x. The work has to be split by place or by entity.
 
-| 項目 | 内容 |
+## Setup
+
+| | |
 |---|---|
-| CPU | Intel Core i5-14600KF（14コア・20スレッド） |
-| メモリ | 32GB |
-| GPU | NVIDIA GeForce RTX 3060 12GB（OpenCL 3.0 / CUDA） |
+| CPU | Intel Core i5-14600KF (14 cores, 20 threads) |
+| RAM | 32 GB |
+| GPU | NVIDIA GeForce RTX 3060 12 GB (OpenCL 3.0 / CUDA) |
 | OS | Windows 11 |
 | Java | Eclipse Temurin 25.0.4.1 |
-| サーバー | Fabric 0.19.5 + fabric-api 0.155.3 / Paper 26.1.2 build 74 / Folia 26.1.2 build 8 / ShreddedPaper 26.1.2 build 18 |
-| MOD | C2ME 0.4.0-alpha.0.62、C2ME OpenCL Acceleration Module（同じ版）、ScalableLux 0.3.0-alpha.0.2、Chunky 1.5.3、spark 1.10.187 |
-| ボット | mineflayer 4.39.0（オフラインモード・`127.0.0.1` のみ） |
-| シード | 20260927 |
+| Servers | Fabric 0.19.5 + fabric-api 0.155.3 / Paper 26.1.2 build 74 / Folia 26.1.2 build 8 / ShreddedPaper 26.1.2 build 18 |
+| Mods | C2ME 0.4.0-alpha.0.62, C2ME OpenCL Acceleration Module (same version), ScalableLux 0.3.0-alpha.0.2, Chunky 1.5.3, spark 1.10.187 |
+| Bots | mineflayer 4.39.0 (offline mode, `127.0.0.1` only) |
+| Seed | 20260927 |
 
-## 1. チャンク生成
+## 1. Chunk generation
 
-半径1,024ブロック（16,641チャンク）を Chunky で作り、1秒あたりのチャンク数を測りました。4つの構成を交互に3回ずつ回しています。
+![Chunk generation](docs/chunkgen.png)
 
-| 構成 | 1秒あたりのチャンク数 | 本家比 |
+Chunky pre-generated a square of radius 1,024 blocks (16,641 chunks). The four configurations ran interleaved, three times each.
+
+| config | chunks/s per run | vs vanilla |
 |---|---|---|
-| 本家相当（Fabric のみ） | 23.4 / 23.2 / 21.8 | 1.0倍 |
-| C2ME | 355.4 / 331.4（1回目の136.4は外れ値） | 15.1倍 |
-| C2ME + ScalableLux | 362.9 / 338.9（1回目の188.4は外れ値） | 15.4倍 |
-| C2ME + OpenCL（GPU） | 483.1 / 457.6 / 489.8 | 20.9倍 |
+| Vanilla (Fabric only) | 23.4 / 23.2 / 21.8 | 1.0x |
+| C2ME | 355.4 / 331.4 (first run 136.4, outlier) | 15.1x |
+| C2ME + ScalableLux | 362.9 / 338.9 (first run 188.4, outlier) | 15.4x |
+| C2ME + OpenCL (GPU) | 483.1 / 457.6 / 489.8 | 20.9x |
 
-外れ値とした2回は、本家の構成が止まるときの保存（6〜7分かかる）の直後に走った回です。
+The two outlier runs started right after vanilla's 6-7 minute shutdown save. CPU cores busy (radius 512): vanilla 1.13 and 1.14, C2ME 11.58, C2ME + OpenCL 11.10 and 11.32, out of 20 logical.
 
-**使ったコア数**（半径512ブロック）：本家相当 1.13・1.14コア、C2ME 11.58コア、C2ME + GPU 11.10・11.32コア（20スレッド中）。本家が遅いのは1コアしか使わないからで、速くなった分の大部分はマルチコア化によるものです。
+### Is the terrain the same?
 
-### 地形は本家と同じか
+`compare_worlds.py` compared the central 625 chunks (61,440,000 blocks) block by block. Vanilla itself does not give identical worlds from the same seed ([MC-55596](https://mojira.dev/MC-55596)), so the baseline is vanilla vs vanilla.
 
-中心の625チャンク（6,144万ブロック）をブロック単位で突き合わせました（`compare_worlds.py`）。本家は同じシードでも毎回少し違う地形を作る（[MC-55596](https://mojira.dev/MC-55596)）ので、本家どうしのズレを基準にしています。
-
-| 比べた組 | ブロックの種類が違う | 地形の形（地面・液体・空気）が違う | 形の違い（高さ56〜79） |
+| pair | any block differs | terrain shape differs (ground/fluid/air) | shape, y 56..79 |
 |---|---|---|---|
-| 本家 対 本家（基準） | 0.293% | 0.0076% | 0.011% |
-| 本家 対 C2ME | 0.399% | 0.0116% | 0.044% |
-| 本家 対 C2ME + GPU | 0.448% | 0.0146% | 0.071% |
-| C2ME + GPU 対 C2ME + GPU | 0.396% | 0.0108% | 0.026% |
+| vanilla vs vanilla (baseline) | 0.293% | 0.0076% | 0.011% |
+| vanilla vs C2ME | 0.399% | 0.0116% | 0.044% |
+| vanilla vs C2ME + OpenCL | 0.448% | 0.0146% | 0.071% |
+| C2ME + OpenCL vs C2ME + OpenCL | 0.396% | 0.0108% | 0.026% |
 
-ブロックの種類のズレの大半は、葉・落ち葉・鉱石・岩の塊など、あとから置かれる飾りです。地形の形のズレは GPU 版で約7,000ブロックに1つです。本家どうしの揺れより大きく、地表付近で差が目立ちます。これは C2ME-ocl の説明にある「バイオームの境界がまれに1〜2ブロックずれる」と合います。各組1回ずつの比較です。
+Most block-type differences are decorations placed after terrain: leaves, leaf litter, ores and stone blobs. Terrain shape differs in about 1 block in 7,000 for the GPU path, more than the vanilla baseline and mostly near the surface. That fits C2ME-ocl's own note that biome borders can rarely shift by one or two blocks. Each pair was compared once.
 
-## 2. モブの処理を GPU に載せる
+## 2. Mob work on the GPU
 
-どちらの実験でも、CPU（numba）と GPU（CuPy の自作 CUDA カーネル）で同じアルゴリズムを動かしています。
+CPU (numba) and GPU (a hand-written CUDA kernel via CuPy) run the same spatial-grid algorithm.
 
-**押し合い**（`mobs/push_bench.py`）は、本家の `Entity.push` の式をそのまま使いました。押し合いは速度に足すだけなので、処理の順番に結果が左右されません。GPU の時間には、CPU とのデータのやり取りも含めています。
+**Pushing** (`mobs/push_bench.py`) uses vanilla's `Entity.push` formula. Pushing only adds to velocities, so the result does not depend on the order entities are processed in. GPU times include host↔device transfers.
 
-| 場面 | 匹数 | CPU 1コア | CPU 全コア | GPU（倍精度） |
+| scenario | mobs | CPU 1 core | CPU all cores | GPU fp64 |
 |---|---|---|---|---|
-| 4×4ブロックの囲い | 1,600 | 4.2 ms | 0.742 ms | 6.51 ms |
-| 広い範囲に密集 | 16,000 | 5.3 ms | 1.92 ms | 1.77 ms |
-| 広い範囲に密集 | 256,000 | 144 ms | 44.4 ms | 20.4 ms |
+| 4×4 pen | 1,600 | 4.2 ms | 0.742 ms | 6.51 ms |
+| dense crowd | 16,000 | 5.3 ms | 1.92 ms | 1.77 ms |
+| dense crowd | 256,000 | 144 ms | 44.4 ms | 20.4 ms |
 
-- GPU には約0.7ミリ秒の固定費があります。数千匹までは CPU のほうが速いです。
-- 普通の精度（float32）では、最大相対誤差が、密集した6万4千〜25万6千匹で0.11〜0.12、散らばった25万6千匹で0.23になりました。「0.6ブロック以内か」の判定がひっくり返るためです。倍精度なら誤差は10⁻¹⁶程度です。
+The GPU has a fixed cost of about 0.7 ms per call. With fp32, the maximum relative error reached 0.11-0.12 in dense crowds of 64k-256k mobs and 0.23 with 256k spread-out mobs, because "within 0.6 blocks" checks flip. With fp64 the error is around 1e-16.
 
-**経路探索**（`mobs/path_bench.py`：128×128の地図・壁25%・全員が同じプレイヤーを追う場合）
+**Pathfinding** (`mobs/path_bench.py`): 128×128 map, 25% walls, all mobs chasing one player.
 
-| 匹数 | 1匹ずつ A*（CPU 1コア） | 1匹ずつ A*（CPU 全コア） | フローフィールド（CPU 1コア） | フローフィールド（GPU） |
+| mobs | A* per mob, 1 core | A* per mob, all cores | flow field, 1 core | flow field, GPU |
 |---|---|---|---|---|
 | 10 | 0.153 ms | 0.194 ms | 0.161 ms | 2 ms |
 | 1,000 | 18.5 ms | 8.7 ms | 0.161 ms | 2 ms |
 | 10,000 | 188 ms | 76.9 ms | 0.161 ms | 2 ms |
 
-効いているのは GPU ではなく、「全員分をまとめて1回計算する」というやり方の変更です。ただし、全員が同じ目標を追うときにしか使えません。どの方法でも、道の長さは全モブで BFS の正解と一致しました。
+The win comes from the algorithm (one shared field instead of one search per mob), not from the GPU. It only applies when mobs share a target. Every method's path lengths matched a BFS reference for every mob.
 
-## 3. Paper・Folia・ShreddedPaper の比較
+## 3. Paper vs Folia vs ShreddedPaper
 
-負荷の条件は次のとおりです。
-- 16か所に、ボットを2体ずつ（合計32体）置きました。
-- 各地点のリーダーのボットが、村人を `/summon` で出しました。
-- 難易度はピースフルです。
-- Folia の `threaded-regions.threads` と ShreddedPaper の `thread-count` は、どちらも12にしました。
-- TPS は各サーバー自身の報告です（Folia は地域の中央値、ほかは1分平均）。
-- 使ったコア数は、サーバーのプロセスの CPU 時間を経過時間で割ったものです。
+Test conditions:
+- 16 groups of 2 bots each (32 bots). Each group's leader bot spawned villagers with `/summon`. Difficulty was peaceful.
+- Folia `threaded-regions.threads` and ShreddedPaper `thread-count` were both set to 12.
+- TPS is what each server reports: the median region for Folia, the 1-minute average for the others.
+- Cores = the server process's CPU time divided by wall time.
 
-### Folia が地域を分ける距離
+**Folia region merging.** With default settings (grid-exponent 4, view-distance 6), players within 1,536 blocks were put in one region, and players 1,920 blocks or more apart were split ([`results/folia_region_merge.txt`](results/folia_region_merge.txt)).
 
-初期設定（grid-exponent 4・view-distance 6）では、**1,536ブロック以内にいるプレイヤーは1つの地域にまとめられ、1,920ブロック以上離れると分かれました**（[`results/folia_region_merge.txt`](results/folia_region_merge.txt)）。
+**Players spread out** (1,920 blocks apart):
 
-### 散らばっている場合（16か所・1,920ブロック間隔）
-
-| 村人 | Paper | Folia | ShreddedPaper |
+| villagers | Paper | Folia | ShreddedPaper |
 |---|---|---|---|
-| 1,600匹 | TPS 12.2 / 12.9・1.3コア | TPS 20.0 / 20.0・4.2コア | TPS 20.0 / 20.0・3.6〜3.8コア |
-| 4,800匹 | TPS 4.1 / 3.9・1.3コア | TPS 20.0 / 20.0・8.0〜8.3コア | TPS 20.0 / 20.0・7.0〜7.5コア |
-| 9,600匹 | TPS 2.1 / 2.0・1.3コア | TPS 11.7 / 13.8・13.3〜14.5コア | TPS 11.7 / 12.0・9.3コア |
+| 1,600 | TPS 12.2 / 12.9, 1.3 cores | TPS 20.0 / 20.0, 4.2 cores | TPS 20.0 / 20.0, 3.6-3.8 cores |
+| 4,800 | TPS 4.1 / 3.9, 1.3 cores | TPS 20.0 / 20.0, 8.0-8.3 cores | TPS 20.0 / 20.0, 7.0-7.5 cores |
+| 9,600 | TPS 2.1 / 2.0, 1.3 cores | TPS 11.7 / 13.8, 13.3-14.5 cores | TPS 11.7 / 12.0, 9.3 cores |
 
-### 散らばっている場合と、集まっている場合（村人4,800匹）
+**Spread out vs clustered** (4,800 villagers):
 
-| サーバー | 1,920ブロック間隔 | 256ブロック間隔 |
+| server | 1,920 blocks apart | 256 blocks apart |
 |---|---|---|
-| Paper | TPS 2.90 / 3.30・1.4コア | TPS 2.50 / 3.60・1.3コア |
-| Folia | TPS 20.00 / 20.00・8.7〜9.4コア・16地域 | **TPS 0.24 / 0.26・1.2コア・1地域** |
-| ShreddedPaper | TPS 19.30 / 20.00・7.7〜8.6コア | **TPS 17.30 / 17.70・5.3コア** |
+| Paper | TPS 2.90 / 3.30, 1.4 cores | TPS 2.50 / 3.60, 1.3 cores |
+| Folia | TPS 20.00 / 20.00, 8.7-9.4 cores, 16 regions | **TPS 0.24 / 0.26, 1.2 cores, 1 region** |
+| ShreddedPaper | TPS 19.30 / 20.00, 7.7-8.6 cores | **TPS 17.30 / 17.70, 5.3 cores** |
 
-- Folia は、プレイヤーが集まると1つの地域になり、Paper より遅くなりました。
-- ShreddedPaper は、チャンク単位で鍵をかける方式なので、集まっていても並列が残りました。
+## 4. Splitting work by kind
 
-## 4. 処理の種類ごとにコアを分けたら
+![Paper main-thread breakdown](docs/paper_tick_breakdown.png)
 
-Paper の本流スレッド（`Server thread`）を JFR で120秒記録し、各サンプルを「何の処理の中にいたか」で分類しました（`analyze_jfr.py`）。村人4,800匹、4回分です。
+JFR sampled Paper's `Server thread` for 120 s, four times with 4,800 villagers. `analyze_jfr.py` put each sample into a category by the method it was inside.
 
-| 処理 | 割合 |
+| work | share |
 |---|---|
-| モブ：頭脳（Brain） | 65.9〜69.6% |
-| モブ：その他 | 10.8〜12.6% |
-| モブ：押し合い | 4.7〜5.5% |
-| モブ：移動・衝突 | 4.3〜4.7% |
-| モブ：経路探索 | 1.7〜4.1% |
-| 自然発生・ランダムな更新 | 2.6〜3.4% |
-| チャンクの仕組み・追跡 | 1.8〜2.2% |
-| レッドストーンなどの予約された更新 | 0.2〜0.6% |
+| entities: brain (AI) | 65.9-69.6% |
+| entities: other | 10.8-12.6% |
+| entities: pushing | 4.7-5.5% |
+| entities: movement/collision | 4.3-4.7% |
+| entities: pathfinding | 1.7-4.1% |
+| random ticks, weather, spawning | 2.6-3.4% |
+| chunk system / entity tracking | 1.8-2.2% |
+| scheduled block/fluid ticks (redstone etc.) | 0.2-0.6% |
 
-種類ごとに別々のコアで動かすと、1回の更新は一番重い種類より短くはなりません。なので、上限は **1.44〜1.52倍**（アムダールの法則）です。「モブ」と「それ以外」に分けるだけなら、約1.1倍です。重いのは同じ種類の処理の大量のくり返しなので、場所やモブごとに分けるしかありません。
+If each kind ran on its own core, a tick could not get shorter than its largest kind. The upper bound is therefore **1.44-1.52x** (Amdahl). Splitting only mobs from everything else gives about 1.1x.
 
-## 限界と注意
+## Limitations
 
-- 1台の PC で、各条件2〜3回ずつの計測です。ボットはサーバーと同じ PC で動いています（0.3〜0.6コアを使用）。
-- 負荷は村人に偏っています。職業ブロックもベッドもない村人は、POI（ベッドや職業ブロック）を探し続けます。これは最悪に近い条件で、頭脳の割合を押し上げています。取引所やレッドストーン装置が中心のサーバーでは、内訳が変わります。
-- 世界は C2ME + GPU で作ってから、全サーバーで同じものを使いました。Paper 系は、起動時にこの世界のフォルダの形式を移し替えています。
-- Canvas（Folia のフォーク）は、公式のダウンロードページから自動で取得できなかったので、比べていません。
-- モブの GPU 実験は、本家のサーバーの外で式と格子を再現したものです。Java のサーバーに組み込んだ場合の通信や同期の手間は含みません。
+- One PC, two or three runs per condition. The bots ran on the same PC as the server and used 0.3-0.6 cores.
+- The load is villager-heavy. Villagers without beds or workstations keep searching for points of interest (POI). This is close to a worst case and inflates the brain's share. Servers built around trading halls or redstone would show a different breakdown.
+- One world, generated with C2ME + OpenCL, was shared by all servers. The Paper-based servers migrated its folder layout at startup.
+- Canvas (a Folia fork) was not tested: its official download page could not be fetched automatically.
+- The mob GPU experiments re-implement the formulas outside the server. They do not include the cost of wiring a GPU into the Java server.
 
-## 失敗した回も残しています
+## Invalid runs kept on purpose
 
-| ファイル | 何が起きたか |
+| file | what went wrong |
 |---|---|
-| `results/invalid_chunkgen_run1_overlapping_save.jsonl` | 本家の保存が終わる前に次の構成が始まり、計測が重なった。捨てて取り直した |
-| `results/servers_run1.jsonl` | **Folia の行は無効**。Folia には `/function` がなく（Unknown command）、データパックで出したつもりの村人が1匹も出ていなかった。Paper と ShreddedPaper の行は有効 |
-| `results/servers_trials.jsonl` | 条件を固める前の試し運転。地点の間隔が短く、Folia が1地域だった |
+| `results/invalid_chunkgen_run1_overlapping_save.jsonl` | The next config started before vanilla finished saving, so the runs overlapped. Discarded and re-run. |
+| `results/servers_run1.jsonl` | **Folia rows are invalid.** Folia has no `/function` command (Unknown command), so the datapack spawned no villagers. The Paper and ShreddedPaper rows are valid. |
+| `results/servers_trials.jsonl` | Trial runs before the setup was fixed. Groups were close enough that Folia used one region. |
 
-## 再現のしかた
+## Reproduce
 
-サーバー本体、Java、MOD、世界データは含めていません。それぞれの公式の配布元から取得してください。
+Server jars, the JDK, mods and worlds are not included. Get each from its official source.
 
-1. Temurin JDK 25 を `jdk/` に展開する
-2. 各サーバーを `servers/<名前>/server.jar` に置く
-   - Fabric の構成：`vanilla`、`c2me`、`c2me-lux`、`c2me-ocl`
-   - Paper 系：`paper`、`folia`、`shredded`
-3. MOD を各サーバーの `mods/` に、Chunky を `plugins/` に置く
-4. `server.properties` に次を設定する：`level-seed=20260927`、`online-mode=false`、`server-ip=127.0.0.1`、`pause-when-empty-seconds=0`
-5. Minecraft の EULA に同意する場合は `eula.txt` に書く
-6. `cd bots && npm install` を実行する
+1. Unpack Temurin JDK 25 into `jdk/`.
+2. Put each server at `servers/<name>/server.jar`.
+   - Fabric configs: `vanilla`, `c2me`, `c2me-lux`, `c2me-ocl`
+   - Paper-based: `paper`, `folia`, `shredded`
+3. Put mods in each server's `mods/` and Chunky in `plugins/`.
+4. Set these in `server.properties`: `level-seed=20260927`, `online-mode=false`, `server-ip=127.0.0.1`, `pause-when-empty-seconds=0`.
+5. Accept the Minecraft EULA in `eula.txt` if you agree to it.
+6. Run `cd bots && npm install`.
 
-| やること | コマンド |
+| task | command |
 |---|---|
-| チャンク生成の速さ | `./run_all.sh` |
-| 地形の突き合わせ用の世界を作る | `./run_parity.sh` |
-| 地形の突き合わせ | `python compare_worlds.py worlds/A worlds/B --radius-chunks 12 [--terrain]` |
-| 共有の世界を作る | `python bench.py c2me-ocl 3050 --save-world-as shared_r3050`。そのあと `datapack/bench` を `worlds/shared_r3050/datapacks/` に写す |
-| サーバー比較 | `./run_servers.sh` → `./run_folia_fix.sh` → `./run_kinds.sh` |
-| モブ | `python mobs/push_bench.py` / `python mobs/path_bench.py`（CUDA 対応の GPU と CuPy が必要） |
-| 表を作る | `python summarize.py > results/SUMMARY.md` |
+| chunk generation speed | `./run_all.sh` |
+| worlds for the terrain comparison | `./run_parity.sh` |
+| terrain comparison | `python compare_worlds.py worlds/A worlds/B --radius-chunks 12 [--terrain]` |
+| shared world | `python bench.py c2me-ocl 3050 --save-world-as shared_r3050`, then copy `datapack/bench` into `worlds/shared_r3050/datapacks/` |
+| server comparison | `./run_servers.sh`, `./run_folia_fix.sh`, `./run_kinds.sh` |
+| mobs | `python mobs/push_bench.py`, `python mobs/path_bench.py` (needs a CUDA GPU and CuPy) |
+| tables / charts | `python summarize.py > results/SUMMARY.md`, `python charts.py` |
 
-Minecraft は Mojang Studios の商標です。このリポジトリは Mojang および Microsoft とは関係ありません。
-
-コードは MIT ライセンスです。
+Minecraft is a trademark of Mojang Studios. This project is not affiliated with Mojang or Microsoft. Code is MIT licensed.
