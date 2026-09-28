@@ -1,0 +1,12 @@
+diff --git a/io/papermc/paper/threadedregions/TickRegionScheduler.java b/io/papermc/paper/threadedregions/TickRegionScheduler.java
+index 439c5a2..46488b0 100644
+--- a/io/papermc/paper/threadedregions/TickRegionScheduler.java
++++ b/io/papermc/paper/threadedregions/TickRegionScheduler.java
+@@ -140,6 +140,7 @@ public final class TickRegionScheduler {
+             throw new IllegalStateException("Trying to double unset ticking region!");
+         }
+         tickThreadRunner.currentTickingRegion = region;
++        ++tickThreadRunner.ownershipEpoch; // Folia - invalidate the per-thread ownership cache in TickThread
+         if (region != null) {
+             tickThreadRunner.currentTickingWorldRegionizedData = region.regioniser.world.worldRegionData.get();
+             // Folia start - profiler

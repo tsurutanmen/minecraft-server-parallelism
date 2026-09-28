@@ -7,10 +7,11 @@ out = []
 for r in rows:
     t = r["report_tail"]
     rec = {"server": r["server"], "villagers": r["villagers_spawned_by_bots"], "cores": r["server_cores"], "kicked": r["bots_kicked"]}
-    if r["server"] == "folia":
+    if r["server"].startswith("folia"):
         low = [float(m.group(1)) for l in t if (m := re.search(r"Lowest Region TPS: " + num, l))]
         med = [float(m.group(1)) for l in t if (m := re.search(r"Median Region TPS: " + num, l))]
-        mspt = [float(m.group(1)) for l in t if (m := re.search(num + r" MSPT at", l))]
+        # Folia prints thousands separators ("3,828.71 MSPT"); the plain number pattern would read "828.71"
+        mspt = [float(m.group(1).replace(",", "")) for l in t if (m := re.search(r"([\d,]+(?:\.\d+)?) MSPT at", l))]
         regions = [int(m.group(1)) for l in t if (m := re.search(r"Total regions: (\d+)", l))]
         rec.update(tps=st.median(med[-6:]) if med else None, tps_worst=min(low[-6:]) if low else None,
                    mspt_worst_region=max(mspt[-6:]) if mspt else None, regions=max(regions) if regions else None)
@@ -35,5 +36,5 @@ print(f"{'server':9s} {'villagers':>9s} {'TPS (each run)':>18s} {'MSPT':>14s} {'
 for (s, v), rs in sorted(g.items(), key=lambda x: (x[0][1], x[0][0])):
     tp = [r["tps"] for r in rs]; co = [r["cores"] for r in rs]
     ms = [r.get("mspt", r.get("mspt_worst_region")) for r in rs]
-    extra = f" regions={[r.get('regions') for r in rs]}" if s == "folia" else ""
+    extra = f" regions={[r.get('regions') for r in rs]}" if s.startswith("folia") else ""
     print(f"{s:9s} {v:9d} {str(tp):>18s} {str(ms):>14s} {str(co):>12s}{extra}")

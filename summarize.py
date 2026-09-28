@@ -69,7 +69,7 @@ num = r"(\d+(?:\.\d+)?)"
 
 def parse(r):
     t = r["report_tail"]
-    if r["server"] == "folia":
+    if r["server"].startswith("folia"):
         med = [float(m.group(1)) for l in t if (m := re.search(r"Median Region TPS: " + num, l))]
         # Folia prints thousands separators ("3,828.71 MSPT"); the plain number pattern would read "828.71"
         mspt = [float(m.group(1).replace(",", "")) for l in t if (m := re.search(r"([\d,]+(?:\.\d+)?) MSPT at", l))]
@@ -113,3 +113,21 @@ for (sp, s), xs in sorted(g.items(), key=lambda x: (-x[0][0], x[0][1])):
 print("\n## 8. Where Paper's main thread spends its time (JFR, 4,800 villagers)\n")
 for f in sorted((R / "jfr_breakdown").glob("*.txt")):
     print(f"### {f.stem}\n```\n{f.read_text().strip()}\n```")
+
+# ---------------- 9. optimizations ----------------
+print("\n## 9. Patches: clustered load (4,800 villagers, 16 groups 256 blocks apart, 32 bots)\n")
+print("Folia rows: median region TPS and worst-region MSPT. Paper rows: 1-minute TPS and MSPT. "
+      "`folia` is the official build 8 from section 7; `paperbase` is Paper ver/26.1.2 e4e17fc built locally "
+      "without changes, the same commit the patch was applied to.\n")
+print("| server | TPS per run | MSPT per run | cores per run |")
+print("|---|---|---|---|")
+base = [r for r in jl("servers_clustered_vs_spread.jsonl") if r["server"] == "folia" and r["spacing"] == 256]
+opt = [r for r in jl("opt_runs.jsonl") if r["spacing"] == 256]
+g = collections.defaultdict(list)
+for r in base + opt: g[r["server"]].append((parse(r), r["server_cores"]))
+for s in ["folia", "foliaA", "foliaB", "paperbase", "paperpoi"]:
+    xs = g[s]
+    print(f"| {s} | {fmt([x[0][0] for x in xs], 2)} | {fmt([x[0][1] for x in xs])} | {fmt([x[1] for x in xs], 2)} |")
+print("\nSpread-out check for foliaB (1,920 blocks apart): " + ", ".join(
+    f"TPS {parse(r)[0]:.2f}, MSPT {parse(r)[1]:.1f}, cores {r['server_cores']:.2f}" for r in jl("opt_runs.jsonl") if r["spacing"] == 1920))
+print("\n" + (R / "opt_jfr_shares.txt").read_text().strip().replace("\n", "\n    ").join(["```\n    ", "\n```"]))

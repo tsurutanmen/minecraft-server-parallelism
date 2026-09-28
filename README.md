@@ -10,6 +10,7 @@ Measurements on one desktop PC with Minecraft Java Edition 26.1.2:
 2. Whether mob work (pushing, pathfinding) is worth moving to the GPU
 3. Paper vs Folia vs ShreddedPaper under the same bot swarm, with players spread out and clustered
 4. The most you could gain by giving each *kind* of server work its own core
+5. Two small patches for the clustered case, and whether they keep villager behaviour intact
 
 ![Spread out vs clustered](docs/servers_spread_vs_clustered.png)
 
@@ -20,6 +21,7 @@ Every number below comes from the raw data in `results/`, via `summarize.py` →
 - **Vanilla chunk generation uses about 1 core.** It makes 22.8 chunks/s. C2ME spreads the work over about 11.6 cores and makes 343 chunks/s (15.1x). The C2ME OpenCL add-on on an RTX 3060 raises this to 477 chunks/s (20.9x). Terrain from the GPU path matches vanilla closely. It differs slightly more than two vanilla runs differ from each other, mostly near the surface.
 - **The GPU does not help mobs at normal counts.** Pushing beats one CPU core at a few thousand mobs, and beats all cores at around 16,000. fp32 is unsafe. For a horde chasing one player, a shared flow field on one CPU core takes 0.16 ms. Per-mob A* takes 18.5 ms for 1,000 mobs. The GPU flow field is slower than the CPU one.
 - **Folia only helps when players are far apart.** With default settings, players within 1,536 blocks share one region; at 1,920 blocks they are split. With players spread out, Folia and ShreddedPaper both hold 20 TPS at 4,800 villagers, while Paper drops to about 3-4. With players clustered 256 blocks apart, Folia runs everything in one region at **0.24-0.26 TPS, slower than Paper**. ShreddedPaper keeps **17.3-17.7 TPS**.
+- **Remembering empty POI searches fixes most of the clustered case.** A small patch that skips villager workstation searches known to find nothing made the clustered Folia region about 11x faster (0.25 → 2.8 TPS) and Paper about 1.6x faster (4.1-4.4 → 6.9 TPS), with the same villager behaviour in a job-taking test. A second patch aimed at Folia's ownership checks did not help.
 - **Splitting by kind of work caps at about 1.5x.** Villager brain logic takes 66-70% of Paper's main thread. A tick cannot get shorter than its largest kind of work, which makes about 1.5x the upper bound. Splitting only "mobs" from "everything else" gives about 1.1x. The work has to be split by place or by entity.
 
 ## Setup
@@ -133,6 +135,29 @@ JFR sampled Paper's `Server thread` for 120 s, four times with 4,800 villagers. 
 
 If each kind ran on its own core, a tick could not get shorter than its largest kind. The upper bound is therefore **1.44-1.52x** (Amdahl). Splitting only mobs from everything else gives about 1.1x.
 
+## 5. Patches for the clustered case
+
+Section 3 showed Folia collapsing when players cluster. The JFR recording of that single region pointed at two costs, and each got a small patch (in `patches/`). All numbers are from the clustered load: 4,800 villagers, 16 groups 256 blocks apart.
+
+**A. Remember the last ownership check (Folia only).** On Folia, each POI section read goes through `TickThread.isTickThreadFor`, which looks up the region of that chunk in a concurrent table. A region cannot gain or lose sections while a thread holds it: `addChunk` never adds to a ticking region, and merges and splits wait until release. So a thread can remember the answer for the last region section until its region changes. The patch keeps that one-entry cache and clears it in `TickRegionScheduler.setTickingRegion`.
+
+**B. Remember empty POI searches (Paper and Folia).** Jobless villagers look for a workstation or bed every 1-2 seconds, scanning 48 blocks on each axis, and with none around they scan the whole range every time. When a search finds nothing, the patch checks once more over 48 + 8 blocks without the retry filter. If that is empty too, later searches are skipped while the villager stays within 8 blocks of that spot on every axis and no POI has changed anywhere in the world. POI changes are counted in `PoiManager.setDirty`, which every add, remove, ticket change and refresh goes through. The retry bookkeeping only runs when a POI exists, so a skipped search ends exactly as the real one would.
+
+| server | TPS per run | MSPT per run |
+|---|---|---|
+| Folia (official build 8) | 0.24 / 0.26 | 4,110 / 3,727 |
+| Folia + A | 0.22 / 0.24 | 4,467 / 4,041 |
+| Folia + A + B | **2.81 / 2.82** | **362 / 359** |
+| Paper ver/26.1.2 (e4e17fc, built unchanged) | 4.10 / 4.40 | 244 / 229 |
+| Paper ver/26.1.2 + B | **6.90 / 6.90** | **146 / 144** |
+
+- **B makes the clustered Folia region about 11x faster and Paper about 1.6x faster.** The share of thread samples inside the POI search fell from 79.7% to 9.3% on Folia and from 33.6% to 3.6% on Paper ([`results/opt_jfr_shares.txt`](results/opt_jfr_shares.txt)).
+- **A did not help.** Its target disappeared from the profile (the concurrent-table lookups went from 15.8% of samples to 0%), but tick time did not drop beyond run-to-run variation. It is kept here as a negative result.
+- **Behaviour check.** After 90 s near no workstation, a composter was placed next to the villagers. A farmer appeared after 6 s on official Paper and Folia, and after 6, 6, 6 and 12 s on the patched servers ([`results/opt_correctness.txt`](results/opt_correctness.txt)). With players spread out, patched Folia still held 20 TPS (MSPT 22.5).
+- Even with B, one Folia region was about 2.5x slower per tick than patched Paper (about 360 vs 145 ms). The rest of that gap has not been traced.
+
+The patches are against Folia `ver/26.1.x` (62dc0f2) and Paper `ver/26.1.2` (e4e17fc). `patches/apply_poi_patch.py` applies B to either source tree after `applyPatches`.
+
 ## Limitations
 
 - One PC, two or three runs per condition. The bots ran on the same PC as the server and used 0.3-0.6 cores.
@@ -171,6 +196,11 @@ Server jars, the JDK, mods and worlds are not included. Get each from its offici
 | server comparison | `./run_servers.sh`, `./run_folia_fix.sh`, `./run_kinds.sh` |
 | mobs | `python mobs/push_bench.py`, `python mobs/path_bench.py` (needs a CUDA GPU and CuPy) |
 | tables / charts | `python summarize.py > results/SUMMARY.md`, `python charts.py` |
+
+## Changes
+
+- **v1.1.0** (2026-09-28): added section 5 (patches, data in `results/opt_*`, diffs in `patches/`). Fixed a parsing bug: Folia prints MSPT with a thousands separator ("3,828.71"), and v1.0.0's `results/SUMMARY.md` read only the part after the comma. The clustered Folia MSPT is 4,110 / 3,727 ms, not 989 / 727 ms. TPS values and all Paper and ShreddedPaper numbers were not affected.
+- **v1.0.0** (2026-09-28): first release.
 
 **Cite as:** Tsuruta (2026). *How many cores can a Minecraft server use?* Zenodo. https://doi.org/10.5281/zenodo.23008263
 

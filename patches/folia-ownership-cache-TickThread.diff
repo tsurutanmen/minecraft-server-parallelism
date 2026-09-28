@@ -1,0 +1,49 @@
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
+index 6c7478732..af0a4e3ee 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
+@@ -170,13 +170,43 @@ public class TickThread extends Thread {
+         return isTickThreadFor(world, net.minecraft.util.Mth.floor(pos.x) >> 4, net.minecraft.util.Mth.floor(pos.z) >> 4);
+     }
+ 
++    // Folia start - cache the last ownership check per thread
++    // A ticking region cannot gain or lose sections: addChunk never adds to a ticking region and
++    // merges/splits happen on release. So while a thread holds one region, the answer for a
++    // region section cannot change. ownershipEpoch is bumped every time the thread's region is
++    // set or unset, which invalidates the cache.
++    public long ownershipEpoch;
++    private long ownershipCacheEpoch;
++    private Level ownershipCacheWorld;
++    private long ownershipCacheSection;
++    private boolean ownershipCacheResult;
++    // Folia end - cache the last ownership check per thread
++
+     public static boolean isTickThreadFor(final Level world, final int chunkX, final int chunkZ) {
+         final ThreadedRegionizer.ThreadedRegion<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> region =
+             TickRegionScheduler.getCurrentRegion();
+         if (region == null) {
+             return isShutdownThread();
+         }
+-        return ((net.minecraft.server.level.ServerLevel)world).regioniser.getRegionAtUnsynchronised(chunkX, chunkZ) == region;
++        final ThreadedRegionizer<TickRegions.TickRegionData, TickRegions.TickRegionSectionData> regioniser =
++            ((net.minecraft.server.level.ServerLevel)world).regioniser;
++        // Folia start - cache the last ownership check per thread
++        // epoch 0 means the thread never had a region set through the scheduler (e.g. the shutdown thread)
++        if (Thread.currentThread() instanceof TickThread tickThread && tickThread.ownershipEpoch != 0L) {
++            final long sectionKey = CoordinateUtils.getChunkKey(chunkX >> regioniser.sectionChunkShift, chunkZ >> regioniser.sectionChunkShift);
++            if (tickThread.ownershipCacheEpoch == tickThread.ownershipEpoch && tickThread.ownershipCacheWorld == world
++                && tickThread.ownershipCacheSection == sectionKey) {
++                return tickThread.ownershipCacheResult;
++            }
++            final boolean owned = regioniser.getRegionAtUnsynchronised(chunkX, chunkZ) == region;
++            tickThread.ownershipCacheEpoch = tickThread.ownershipEpoch;
++            tickThread.ownershipCacheWorld = world;
++            tickThread.ownershipCacheSection = sectionKey;
++            tickThread.ownershipCacheResult = owned;
++            return owned;
++        }
++        // Folia end - cache the last ownership check per thread
++        return regioniser.getRegionAtUnsynchronised(chunkX, chunkZ) == region;
+     }
+ 
+     public static boolean isTickThreadFor(final Level world, final AABB aabb) {

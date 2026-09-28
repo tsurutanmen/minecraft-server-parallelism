@@ -1,0 +1,21 @@
+Correctness test for "remember empty POI searches" (bots/poitest.js, poitest.py).
+
+Procedure: flat stone floor, 5 villagers summoned with no workstation or bed within range, wait 90 s
+(several empty searches, every 20-40 ticks, so the patched servers have remembered "nothing here"),
+then /setblock a composter next to them and poll every 5 s for a villager with profession farmer.
+
+Seconds from placing the composter to the first farmer:
+  Paper 26.1.2 build 74 (official, unpatched)       6
+  Folia 26.1.2 build 8 (official, unpatched)        6
+  Folia + both patches (B), run 1                   6
+  Folia + both patches (B), run 2                   6
+  Paper ver/26.1.2 e4e17fc + POI patch, run 1        6
+  Paper ver/26.1.2 e4e17fc + POI patch, run 2       12
+
+The patched servers were really skipping searches while the villagers waited: in the load tests,
+the share of main/region-thread samples inside PoiAccess.findNearestPoiRecords fell from 79.7% to 9.3%
+(Folia, one region) and from 33.6% to 3.6% (Paper). See opt_jfr_shares.txt.
+
+Note: the first version of this test failed on every server, patched or not, because the composter
+was placed over air; a floating workstation can never be reached, so no villager takes it. The floor
+fixed that. Results above are from the fixed test only.

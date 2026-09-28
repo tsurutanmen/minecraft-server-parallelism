@@ -168,3 +168,32 @@ samples on 'Server thread': 10865  (busy: 10865)
     0.0%  of all    0.0% of busy   raids/other world
 Amdahl bound for splitting by kind of work: at most 1.48x (largest single kind = 67.7% of busy time)
 ```
+
+## 9. Patches: clustered load (4,800 villagers, 16 groups 256 blocks apart, 32 bots)
+
+Folia rows: median region TPS and worst-region MSPT. Paper rows: 1-minute TPS and MSPT. `folia` is the official build 8 from section 7; `paperbase` is Paper ver/26.1.2 e4e17fc built locally without changes, the same commit the patch was applied to.
+
+| server | TPS per run | MSPT per run | cores per run |
+|---|---|---|---|
+| folia | 0.24 / 0.26 | 4110.1 / 3726.7 | 1.23 / 1.19 |
+| foliaA | 0.22 / 0.24 | 4466.8 / 4040.5 | 1.25 / 1.24 |
+| foliaB | 2.81 / 2.82 | 362.1 / 358.8 | 1.67 / 1.66 |
+| paperbase | 4.10 / 4.40 | 244.4 / 228.8 | 1.35 / 1.33 |
+| paperpoi | 6.90 / 6.90 | 145.8 / 144.4 | 1.40 / 1.40 |
+
+Spread-out check for foliaB (1,920 blocks apart): TPS 20.00, MSPT 22.5, cores 8.11
+
+```
+    Share of samples on the busiest server thread whose stack contains each frame (JFR, 120 s, 4,800
+    villagers, 16 groups 256 blocks apart). One recording each.
+    
+                                  POI search  AcquirePoi  Brain   SWMR lookup  isTickThreadFor
+    Folia official (1 region)       79.7%       85.2%     94.6%     15.8%         22.1%
+    Folia A: ownership cache        75.0%       82.3%     93.5%      0.0%          6.0%
+    Folia B: A + POI patch           9.3%       16.7%     66.7%      0.0%          1.4%
+    Paper e4e17fc                   33.6%       35.2%     71.4%        -             -
+    Paper e4e17fc + POI patch        3.6%        5.4%     56.1%        -             -
+    
+    POI search = PoiAccess.findNearestPoiRecords, SWMR lookup = SWMRLong2ObjectHashTable,
+    isTickThreadFor = TickThread.isTickThreadFor.
+```
